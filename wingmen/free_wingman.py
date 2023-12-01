@@ -1,6 +1,5 @@
 from wingmen.wingman import Wingman
 from services.edge import EdgeTTS
-from services.printr import Printr
 import speech_recognition as sr
 
 
