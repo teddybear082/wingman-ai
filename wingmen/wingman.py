@@ -255,6 +255,21 @@ class Wingman:
 
         return random.choice(command_responses)
 
+    def _try_instant_activation(self, transcript: str) -> str:
+        """Tries to execute an instant activation command if present in the transcript.
+
+        Args:
+            transcript (str): The transcript to check for an instant activation command.
+
+        Returns:
+            str: The response to the instant command or None if no such command was found.
+        """
+        command = self._execute_instant_activation_command(transcript)
+        if command:
+            response = self._select_command_response(command)
+            return response
+        return None
+
     def _execute_instant_activation_command(self, transcript: str) -> dict | None:
         """Uses a fuzzy string matching algorithm to match the transcript to a configured instant_activation command and executes it immediately.
 
