@@ -1,11 +1,12 @@
 from wingmen.wingman import Wingman
 from services.edge import EdgeTTS
+from services.secret_keeper import SecretKeeper
 import speech_recognition as sr
 
 
 class FreeWingman(Wingman):
-    def __init__(self, name: str, config: dict[str, any]):
-        super().__init__(name, config)
+    def __init__(self, name: str, config: dict[str, any], secret_keeper: SecretKeeper):
+        super().__init__(name, config, secret_keeper)
         self.edge_tts = EdgeTTS()
         self.r = sr.Recognizer()
 
@@ -29,8 +30,8 @@ class FreeWingman(Wingman):
         if not text or text == "None":
             return
 
-        if self.tts_provider == "edge_tts":
-            edge_config = self.config["edge_tts"]
+        edge_config = self.config["edge_tts"]
+        if edge_config:
             tts_voice = edge_config.get("tts_voice")
 
             await self.edge_tts.generate_speech(
