@@ -492,6 +492,63 @@ wingmen:
     edge_tts:
       tts_voice: en-US-GuyNeural
     commands:
+      - name: DeployLandingGear
+        keys:
+          - key: n
+        instant_activation:
+          - Deploy landing gear
+        responses:
+          - Landing gear deployed.
+      - name: RetractLandingGear
+        keys:
+          - key: n
+        instant_activation:
+          - Retract landing gear
+        responses:
+          - Landing gear retracted.
+      - name: EnableQuantumDrive
+        keys:
+          - key: b
+        instant_activation:
+          - Enable quantum drive
+        responses:
+          - Quantum drive enabled.
+      - name: DisableQuantumDrive
+        keys:
+          - key: b
+        instant_activation:
+          - Disable quantum drive
+        responses:
+          - Quantum drive disabled.
+      - name: JumpWithQuantumDrive
+        keys:
+          - key: b
+            hold: 0.8
+        instant_activation:
+          - Jump with quantum drive
+        responses:
+          - Jumping with quantum drive.
+      - name: HoldCurrentSpeed
+        keys:
+          - key: c
+            modifier: alt
+        instant_activation:
+          - Hold current speed
+        responses:
+          - Current speed held.
+      - name: DisableLimiter
+        keys:
+          - key: c
+            modifier: alt
+        instant_activation:
+          - Disable limiter
+        responses:
+          - Limiter disabled.
+      # ──────────────────────────────────────────────────────────────────────────
+      # ──────────────────────────────────────────────────────────────────────────
+      # ──────────────────────────────────────────────────────────────────────────
+      # ──────────────────────────────────────────────────────────────────────────
+      # ──────────────────────────────────────────────────────────────────────────
       - name: FlightReady
         keys:
           - key: r
