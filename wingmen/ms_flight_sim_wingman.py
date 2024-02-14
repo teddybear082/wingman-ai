@@ -31,6 +31,8 @@ class MSFlightSimWingman(OpenAiWingman):
         
         if function_name == "read_aircraft_and_environment_data":
             function_response = await self._read_aircraft_and_environment_data(**function_args)
+        if function_name == "set_aircraft_and_environment_data":
+            function_response = await self._set_aircraft_and_environment_data(**function_args)
         
         return function_response, instant_response
     
@@ -48,10 +50,15 @@ class MSFlightSimWingman(OpenAiWingman):
                 return "SimConnect not available."
 
         data = self.aircraft.get(variable)
-
-        print(variable)
-        print(data)
         return data
+    
+    async def _set_aircraft_and_environment_data(self, variable: str, value: int) -> str:
+        if not self.simconnect:
+            if not await self.try_simconnect():
+                return "SimConnect not available."
+
+        self.aircraft.set(variable, value)
+        return "Ok"
 
     def _build_tools(self) -> list[dict[str, any]]:
         tools = super()._build_tools()
@@ -69,7 +76,35 @@ class MSFlightSimWingman(OpenAiWingman):
                                 "description": "The variable to read from the simulator.",
                                 "enum": [
                                     "PLANE_ALTITUDE",
+                                    "AIRSPEED_TRUE",
                                 ],
+                            },
+                        },
+                        "required": ["variable"],
+                    },
+                },
+            }
+        )
+        tools.append(
+            {
+                "type": "function",
+                "function": {
+                    "name": "set_aircraft_and_environment_data",
+                    "description": "Sets the aircraft and environment data from the simulator.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "variable": {
+                                "type": "string",
+                                "description": "The variable to set in the simulator.",
+                                "enum": [
+                                    "PLANE_ALTITUDE",
+                                    "AIRSPEED_TRUE",
+                                ],
+                            },
+                            "value": {
+                                "type": "integer",
+                                "description": "The value to set in the simulator.",
                             },
                         },
                         "required": ["variable"],
