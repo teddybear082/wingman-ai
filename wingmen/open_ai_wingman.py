@@ -3,6 +3,9 @@ from exceptions import MissingApiKeyException
 from services.open_ai import OpenAi
 from services.printr import Printr
 from wingmen.wingman import Wingman
+from PIL import Image
+import base64
+import requests
 
 
 class OpenAiWingman(Wingman):
@@ -62,6 +65,7 @@ class OpenAiWingman(Wingman):
             for tool_call in tool_calls:  # there could be multiple tool calls at once
                 function_name = tool_call.function.name
                 function_args = json.loads(tool_call.function.arguments)
+
                 if function_name == "execute_command":
                     # get the command based on the argument passed by GPT
                     command = self._get_command(function_args["command_name"])
@@ -70,6 +74,10 @@ class OpenAiWingman(Wingman):
                     # if the command has responses, we have to play one of them
                     if command.get("responses"):
                         self._play_audio(self._get_exact_response(command))
+
+                if function_name == "get_vision_from_screen_or_view":
+                    question = function_args["original_question"]
+                    function_response = self._get_vision_from_screen_or_view(question)
 
                 # add the response of the function to the messages list so that it can be used in the next GPT call
                 if function_response:
@@ -81,6 +89,9 @@ class OpenAiWingman(Wingman):
                             "content": function_response,
                         }
                     )
+
+                if function_name == "get_vision_from_screen_or_view":
+                    return None
 
             # Make a second GPT call to process the function responses.
             # This basically summarizes the function responses.
@@ -95,6 +106,8 @@ class OpenAiWingman(Wingman):
             second_content = second_response.choices[0].message.content
             self.messages.append(second_response.choices[0].message)
             self._play_audio(second_content)
+
+            # return second_content
 
         return content
 
@@ -137,5 +150,93 @@ class OpenAiWingman(Wingman):
                     },
                 },
             },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_vision_from_screen_or_view",
+                    "description": "Gets a description of what is on the screen or in the view.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "original_question": {
+                                "type": "string",
+                                "description": "The original question that was asked",
+                            },
+                        },
+                        "required": ["original_question"],
+                    },
+                },
+            },
         ]
         return tools
+
+    def _get_vision_from_screen_or_view(self, question: str) -> str:
+        import dxcam
+
+        print("Getting vision from screen or view...")
+
+        camera = dxcam.create()
+        frame = camera.grab()
+
+        # Create a PIL image from array
+        image = Image.fromarray(frame)
+
+        desired_width = 1280
+        aspect_ratio = image.height / image.width
+        new_height = int(desired_width * aspect_ratio)
+
+        # resized_image = image.resize((512, 512))
+        resized_image = image.resize((desired_width, new_height))
+
+        # Save the image
+        resized_image.save("image.png")
+
+        # Path to your image
+        image_path = "image.png"
+
+        # Getting the base64 string
+        base64_image = self.encode_image(image_path)
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer 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",
+        }
+
+        payload = {
+            "model": "gpt-4-vision-preview",
+            "messages": [
+                self.messages[0],
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"{question} Please respond in max. 1 sentence.",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}"
+                            },
+                        },
+                    ],
+                }
+            ],
+            "max_tokens": 300,
+        }
+
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions", headers=headers, json=payload
+        )
+
+        response_json = response.json()
+        response_text = response_json.get("choices")[0].get("message").get("content")
+        print(response_text)
+
+        self._play_audio(response_text)
+
+        return response_text
+
+    def encode_image(self, image_path):
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode("utf-8")
